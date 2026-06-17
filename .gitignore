@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/.venv/
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Frontend build output
+frontend/dist/
+
+# Local runtime files
+*.log
+*.pid
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# App data and generated assets
+backend/data/
+backend/uploads/
+backend/backups/
