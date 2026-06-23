@@ -81,6 +81,10 @@ export const api = {
       body: JSON.stringify({ delta }),
     }),
 
+  // ai
+  recognizeItems: (formData) =>
+    request('/api/ai/recognize_items', { method: 'POST', body: formData }),
+
   // stats
   stats: () => request('/api/stats'),
 

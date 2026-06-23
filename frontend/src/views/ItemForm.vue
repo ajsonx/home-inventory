@@ -51,7 +51,9 @@ const imageFile = ref(null)
 const previewUrl = ref('')
 const existingImage = ref('')
 const error = ref('')
+const aiMessage = ref('')
 const saving = ref(false)
+const recognizing = ref(false)
 
 // 内联添加的开关与输入文本
 const adding = reactive({ cat: false, sub: false, loc: false, subloc: false, owner: false })
@@ -141,11 +143,49 @@ async function addOwner() {
   addText.owner = ''
 }
 
-function onFileChange(e) {
+async function onFileChange(e) {
   const file = e.target.files && e.target.files[0]
   if (!file) return
   imageFile.value = file
   previewUrl.value = URL.createObjectURL(file)
+  if (!isEdit.value) await recognizeImage(file)
+}
+
+async function recognizeImage(file) {
+  if (recognizing.value) return
+  recognizing.value = true
+  aiMessage.value = 'AI 正在识别图片...'
+  try {
+    const fd = new FormData()
+    fd.append('image', file)
+    const res = await api.recognizeItems(fd)
+    const item = (res.items && res.items[0]) || null
+    if (!item) {
+      aiMessage.value = 'AI 未识别到明确物品，可手动填写'
+      return
+    }
+    applyAiItem(item, res.shared || {})
+    aiMessage.value = '已根据图片填充表单，可手动调整'
+  } catch (e) {
+    aiMessage.value = e.message || 'AI 识别失败，可手动填写'
+  } finally {
+    recognizing.value = false
+  }
+}
+
+function applyAiItem(item, shared) {
+  const next = { ...form.value }
+  const textFields = ['name', 'category', 'subcategory', 'location', 'sublocation', 'owner']
+  textFields.forEach((key) => {
+    const value = item[key] || shared[key]
+    if (value) next[key] = value
+  })
+  if (item.quantity) next.quantity = item.quantity
+  if (item.purchase_price !== '' && item.purchase_price != null) {
+    next.purchase_price = item.purchase_price
+  }
+  next.expiry_months = item.expiry_months || shared.expiry_months || next.expiry_months || 0
+  form.value = next
 }
 
 async function loadMeta() {
@@ -271,6 +311,7 @@ onMounted(() => {
         <label class="btn btn-primary photo-btn" for="item-photo">选择照片 / 拍照</label>
         <span class="photo-hint">{{ imageFile ? imageFile.name : '支持从相册选择，也可直接拍照' }}</span>
       </div>
+      <div v-if="aiMessage" class="ai-hint" :class="{ loading: recognizing }">{{ aiMessage }}</div>
     </div>
 
     <div class="field">
@@ -504,6 +545,14 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ai-hint {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.ai-hint.loading {
+  color: var(--primary-dark);
 }
 .form-actions {
   display: flex;

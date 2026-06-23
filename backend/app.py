@@ -22,6 +22,7 @@ from flask_cors import CORS
 from PIL import Image, ImageOps
 
 import achievements
+import ai_recognition
 import auth
 import backup
 import config
@@ -206,6 +207,23 @@ def _copy_image(src_name: str) -> str:
 @login_required
 def serve_upload(filename):
     return send_from_directory(config.UPLOAD_DIR, filename)
+
+
+@app.post("/api/ai/recognize_items")
+@login_required
+def api_recognize_items():
+    f = request.files.get("image")
+    if not f or not f.filename:
+        return jsonify({"error": "请先选择图片"}), 400
+    if not _ext_ok(f.filename):
+        return jsonify({"error": "不支持的图片格式"}), 400
+    try:
+        result = ai_recognition.recognize_items(f.read(), f.mimetype, storage.get_meta())
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        return jsonify({"error": "AI 识别失败，请稍后重试"}), 502
+    return jsonify(result)
 
 
 # ---------------- items CRUD ----------------

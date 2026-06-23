@@ -40,14 +40,58 @@ const rows = ref([newRow(), newRow(), newRow()])
 const imageFile = ref(null)
 const previewUrl = ref('')
 const saving = ref(false)
+const recognizing = ref(false)
+const aiMessage = ref('')
 const error = ref('')
 const result = ref('')
 
-function onFileChange(e) {
+async function onFileChange(e) {
   const file = e.target.files && e.target.files[0]
   if (!file) return
   imageFile.value = file
   previewUrl.value = URL.createObjectURL(file)
+  await recognizeImage(file)
+}
+
+async function recognizeImage(file) {
+  if (recognizing.value) return
+  recognizing.value = true
+  aiMessage.value = 'AI 正在识别图片...'
+  try {
+    const fd = new FormData()
+    fd.append('image', file)
+    const res = await api.recognizeItems(fd)
+    const items = res.items || []
+    if (items.length === 0) {
+      aiMessage.value = 'AI 未识别到明确物品，可手动填写'
+      return
+    }
+    applyAiResult(res.shared || {}, items)
+    aiMessage.value = `已识别 ${items.length} 件物品，可手动调整`
+  } catch (e) {
+    aiMessage.value = e.message || 'AI 识别失败，可手动填写'
+  } finally {
+    recognizing.value = false
+  }
+}
+
+function applyAiResult(aiShared, items) {
+  const first = items[0] || {}
+  shared.value = {
+    ...shared.value,
+    category: aiShared.category || first.category || shared.value.category,
+    subcategory: aiShared.subcategory || first.subcategory || shared.value.subcategory,
+    location: aiShared.location || first.location || shared.value.location,
+    sublocation: aiShared.sublocation || first.sublocation || shared.value.sublocation,
+    owner: aiShared.owner || first.owner || shared.value.owner,
+    expiry_months: aiShared.expiry_months || first.expiry_months || shared.value.expiry_months || 0,
+  }
+  rows.value = items.map((item) => ({
+    name: item.name || '',
+    quantity: item.quantity || 1,
+    purchase_price: item.purchase_price ?? '',
+  }))
+  while (rows.value.length < 3) rows.value.push(newRow())
 }
 
 const subCategories = computed(() => {
@@ -150,6 +194,7 @@ onMounted(loadMeta)
           <label class="btn btn-primary photo-btn" for="batch-photo">选择照片 / 拍照</label>
           <span class="photo-hint">{{ imageFile ? imageFile.name : '支持从相册选择，也可直接拍照' }}</span>
         </div>
+        <div v-if="aiMessage" class="ai-hint" :class="{ loading: recognizing }">{{ aiMessage }}</div>
       </div>
 
       <div class="field">
@@ -330,6 +375,14 @@ onMounted(loadMeta)
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ai-hint {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.ai-hint.loading {
+  color: var(--primary-dark);
 }
 .step-btn.danger {
   width: 32px;

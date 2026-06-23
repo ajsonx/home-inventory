@@ -5,6 +5,25 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+
+
+def _load_env_file(path: str) -> None:
+    if not os.path.isfile(path):
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+_load_env_file(os.path.join(ROOT_DIR, ".env"))
 
 # 数据与文件目录
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -24,6 +43,20 @@ PORT = 8000
 
 # Flask session 密钥（部署时请修改，或用环境变量覆盖）
 SECRET_KEY = os.environ.get("HOME_ANALY_SECRET", "change-me-please-in-production")
+
+# 图片 AI 识别（火山方舟 / OpenAI SDK 兼容接口）
+ARK_API_KEY = os.environ.get("ARK_API_KEY", "")
+ARK_BASE_URL = os.environ.get("ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3")
+ARK_MODEL = os.environ.get("ARK_MODEL", "ep-20260623133249-2bblt")
+ARK_API_MODE = os.environ.get("ARK_API_MODE", "").strip().lower()
+ARK_BACK_MODELS = [
+    os.environ[f"ARK_BACK_MODEL_{idx}"].strip()
+    for idx in range(1, 6)
+    if os.environ.get(f"ARK_BACK_MODEL_{idx}", "").strip()
+]
+AI_IMAGE_MAX_SIDE = 1600
+AI_IMAGE_JPEG_QUALITY = 85
+AI_MAX_OUTPUT_TOKENS = int(os.environ["AI_MAX_OUTPUT_TOKENS"]) if os.environ.get("AI_MAX_OUTPUT_TOKENS") else None
 
 # 图片缩略图最长边（像素）
 THUMB_MAX_SIZE = 600
