@@ -139,6 +139,20 @@ onMounted(loadMeta)
       <h3>共享设置</h3>
 
       <div class="field">
+        <label>共享图片（可选，本批所有物品共用，如柜子整体照）</label>
+        <img
+          v-if="previewUrl"
+          :src="previewUrl"
+          class="photo-preview"
+        />
+        <div class="photo-picker">
+          <input id="batch-photo" class="photo-input" type="file" accept="image/*" @change="onFileChange" />
+          <label class="btn btn-primary photo-btn" for="batch-photo">选择照片 / 拍照</label>
+          <span class="photo-hint">{{ imageFile ? imageFile.name : '支持从相册选择，也可直接拍照' }}</span>
+        </div>
+      </div>
+
+      <div class="field">
         <label>分类</label>
         <div class="chips">
           <span
@@ -229,22 +243,6 @@ onMounted(loadMeta)
         <label>存入日期</label>
         <input v-model="shared.created_date" class="input" type="date" />
       </div>
-
-      <div class="field">
-        <label>共享图片（可选，本批所有物品共用，如柜子整体照）</label>
-        <img
-          v-if="previewUrl"
-          :src="previewUrl"
-          style="width: 100%; max-height: 240px; object-fit: contain; border-radius: 10px; background: var(--thumb-bg)"
-        />
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          style="margin-top: 8px"
-          @change="onFileChange"
-        />
-      </div>
     </div>
 
     <div class="chart-card">
@@ -302,6 +300,37 @@ onMounted(loadMeta)
   color: var(--muted);
   margin-right: 2px;
 }
+.photo-preview {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--thumb-bg);
+}
+.photo-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.photo-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.photo-btn {
+  flex: 0 0 auto;
+}
+.photo-hint {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .step-btn.danger {
   width: 32px;
   height: 32px;
@@ -310,5 +339,17 @@ onMounted(loadMeta)
   background: var(--input-bg);
   color: var(--danger);
   font-size: 16px;
+}
+@media (max-width: 700px) {
+  .photo-picker {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .photo-btn {
+    width: 100%;
+  }
+  .photo-hint {
+    white-space: normal;
+  }
 }
 </style>

@@ -135,24 +135,33 @@ onMounted(() => {
 
 <template>
   <div class="container">
-    <div class="toolbar">
-      <input
-        v-model="q"
-        class="input search"
-        placeholder="搜索名称 / 分类 / 位置"
-        @keyup.enter="load"
-      />
-      <select v-model="category" class="select" style="max-width: 120px" @change="load">
-        <option value="">全部分类</option>
-        <option v-for="c in meta.categories" :key="c.name" :value="c.name">{{ c.name }}</option>
-      </select>
-      <select v-model="sortBy" class="select" style="max-width: 140px">
-        <option value="created_desc">最近存入</option>
-        <option value="use_asc">使用次数少→多</option>
-        <option value="duration_desc">存入时长久→近</option>
-        <option value="cost_desc">使用成本高→低</option>
-        <option value="price_desc">购入价格高→低</option>
-      </select>
+    <div class="toolbar list-toolbar">
+      <label class="filter-field search-field">
+        <span>搜索</span>
+        <input
+          v-model="q"
+          class="input search"
+          placeholder="名称 / 分类 / 位置"
+          @keyup.enter="load"
+        />
+      </label>
+      <label class="filter-field">
+        <span>分类</span>
+        <select v-model="category" class="select" @change="load">
+          <option value="">全部分类</option>
+          <option v-for="c in meta.categories" :key="c.name" :value="c.name">{{ c.name }}</option>
+        </select>
+      </label>
+      <label class="filter-field">
+        <span>排序</span>
+        <select v-model="sortBy" class="select">
+          <option value="created_desc">最近存入</option>
+          <option value="use_asc">使用次数少→多</option>
+          <option value="duration_desc">存入时长久→近</option>
+          <option value="cost_desc">使用成本高→低</option>
+          <option value="price_desc">购入价格高→低</option>
+        </select>
+      </label>
       <button class="btn btn-primary" @click="load">搜索</button>
     </div>
 
@@ -239,6 +248,28 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.list-toolbar {
+  align-items: flex-end;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.filter-field {
+  display: flex;
+  flex: 0 1 150px;
+  flex-direction: column;
+  gap: 6px;
+}
+.filter-field span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.search-field {
+  flex: 1 1 220px;
+}
 .owner-tag {
   background: var(--thumb-bg);
   color: var(--text);
@@ -274,5 +305,22 @@ onMounted(() => {
 .step-btn:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+@media (max-width: 700px) {
+  .list-toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+  .filter-field,
+  .search-field,
+  .list-toolbar .btn {
+    width: 100%;
+  }
+  .search-field,
+  .list-toolbar .btn {
+    grid-column: 1 / -1;
+  }
 }
 </style>

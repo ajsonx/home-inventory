@@ -21,7 +21,8 @@ SOON_DAYS = 30
 #   metric 决定进度用哪个指标：
 #     entry_count / complete_pct / entry_amount / cleanup_count / classify_count
 #   thresholds 决定达成门槛：
-#     min_count（计数类）/ min_complete_pct（完整率%）/ min_amount（金额）/ min_image（图片数）
+#     min_count（计数类，也可作为完整率类的最低录入数）
+#     min_complete_pct（完整率%）/ min_amount（金额）/ min_image（图片数）
 _DEFAULTS = [
     {
         "id": "entry_pioneer", "group": "entry", "group_name": "录入成就",
@@ -40,8 +41,8 @@ _DEFAULTS = [
     {
         "id": "entry_organizer", "group": "entry", "group_name": "录入成就",
         "title": "井然主事官", "fund": 200, "icon": "🏛️", "metric": "complete_pct",
-        "thresholds": {"min_complete_pct": 80},
-        "desc": "本人录入物品中 ≥ 80% 填了分类+位置+归属人",
+        "thresholds": {"min_complete_pct": 80, "min_count": 10},
+        "desc": "本人录入 ≥ 10 件，且其中 ≥ 80% 填了分类+位置+归属人",
         "popup": "条理分明、信息完备，荣获【井然主事官】！维护基金 {fund} 元已到账。",
     },
     {
@@ -229,7 +230,10 @@ def _progress_for(ach: dict, stats: dict) -> dict:
     metric = ach.get("metric", "entry_count")
     cur = _metric_value(metric, stats)
     if metric == "complete_pct":
-        return {"current": cur, "target": th.get("min_complete_pct", 100), "unit": "%"}
+        prog = {"current": cur, "target": th.get("min_complete_pct", 100), "unit": "%"}
+        if "min_count" in th:
+            prog["extra"] = f"录入 {stats['entry_count']}/{th['min_count']}"
+        return prog
     if metric == "entry_amount":
         return {"current": cur, "target": th.get("min_amount", 0), "unit": "元"}
     target = th.get("min_count", 1)
@@ -244,7 +248,9 @@ def _is_eligible(ach: dict, stats: dict) -> bool:
     metric = ach.get("metric", "entry_count")
     cur = _metric_value(metric, stats)
     if metric == "complete_pct":
-        return stats["entry_count"] >= 1 and cur >= th.get("min_complete_pct", 100)
+        if stats["entry_count"] < th.get("min_count", 1):
+            return False
+        return cur >= th.get("min_complete_pct", 100)
     if metric == "entry_amount":
         return cur >= th.get("min_amount", 0)
     if cur < th.get("min_count", 1):
@@ -270,7 +276,15 @@ def get_dashboard(member: str) -> dict:
         prog = _progress_for(ach, stats)
         is_claimed = ach["id"] in claimed
         eligible = _is_eligible(ach, stats)
-        pct = 100 if is_claimed else min(100, int(prog["current"] / prog["target"] * 100)) if prog["target"] else 0
+        pct = 0
+        if is_claimed:
+            pct = 100
+        elif prog["target"]:
+            pct = min(100, int(prog["current"] / prog["target"] * 100))
+            th = ach.get("thresholds", {})
+            if ach.get("metric") == "complete_pct" and th.get("min_count"):
+                count_pct = int(stats["entry_count"] / th["min_count"] * 100)
+                pct = min(pct, count_pct)
         groups_map[g]["items"].append({
             **{k: ach[k] for k in ("id", "title", "fund", "icon", "desc", "popup", "tier", "art") if k in ach},
             "progress": prog,

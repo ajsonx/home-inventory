@@ -251,7 +251,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="container" style="max-width: 560px">
+  <div class="container item-form">
     <h2>{{ isEdit ? '编辑物品' : '新增物品' }}</h2>
 
     <div class="field">
@@ -259,20 +259,18 @@ onMounted(() => {
       <img
         v-if="previewUrl"
         :src="previewUrl"
-        style="width: 100%; max-height: 280px; object-fit: contain; border-radius: 10px; background: var(--thumb-bg)"
+        class="photo-preview"
       />
       <img
         v-else-if="existingImage"
         :src="`/uploads/${existingImage}`"
-        style="width: 100%; max-height: 280px; object-fit: contain; border-radius: 10px; background: var(--thumb-bg)"
+        class="photo-preview"
       />
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style="margin-top: 8px"
-        @change="onFileChange"
-      />
+      <div class="photo-picker">
+        <input id="item-photo" class="photo-input" type="file" accept="image/*" @change="onFileChange" />
+        <label class="btn btn-primary photo-btn" for="item-photo">选择照片 / 拍照</label>
+        <span class="photo-hint">{{ imageFile ? imageFile.name : '支持从相册选择，也可直接拍照' }}</span>
+      </div>
     </div>
 
     <div class="field">
@@ -459,7 +457,7 @@ onMounted(() => {
 
     <div class="error-text">{{ error }}</div>
 
-    <div style="display: flex; gap: 10px; margin-top: 8px">
+    <div class="form-actions">
       <button class="btn" style="flex: 1" @click="cancel">取消</button>
       <button class="btn btn-primary" style="flex: 2" :disabled="saving" @click="submit">
         {{ saving ? '保存中...' : '保存' }}
@@ -469,6 +467,49 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.item-form {
+  max-width: 560px;
+}
+.item-form .field {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.photo-preview {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--thumb-bg);
+}
+.photo-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.photo-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.photo-btn {
+  flex: 0 0 auto;
+}
+.photo-hint {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
 .sub-label {
   align-self: center;
   font-size: 13px;
@@ -493,5 +534,52 @@ onMounted(() => {
 .btn.mini {
   padding: 6px 10px;
   font-size: 13px;
+}
+@media (max-width: 700px) {
+  .item-form {
+    padding: 14px;
+  }
+  .item-form h2 {
+    margin-top: 4px;
+  }
+  .item-form .field {
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+  }
+  .item-form .field label {
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+  .item-form .chips {
+    gap: 10px;
+  }
+  .item-form .chip {
+    padding: 9px 14px;
+    font-size: 15px;
+  }
+  .sub-label {
+    width: 100%;
+    margin: 2px 0 0;
+    font-size: 14px;
+  }
+  .inline-add {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .input.mini {
+    flex: 1 1 160px;
+    width: auto;
+    font-size: 14px;
+  }
+  .photo-picker {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .photo-btn {
+    width: 100%;
+  }
+  .photo-hint {
+    white-space: normal;
+  }
 }
 </style>
